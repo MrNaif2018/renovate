@@ -1611,6 +1611,18 @@ const options: RenovateOptions[] = [
     env: false,
   },
   {
+    name: 'transformationRegex',
+    description: 'RegEx (re2) pattern for matching pip-compile output files',
+    type: 'array',
+    subType: 'string',
+    format: 'regex',
+    stage: 'package',
+    allowString: true,
+    mergeable: true,
+    cli: false,
+    env: false,
+  },
+  {
     name: 'js',
     description: 'Configuration object for JavaScript language.',
     stage: 'package',

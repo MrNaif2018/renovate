@@ -1,5 +1,6 @@
 import is from '@sindresorhus/is';
 import { quote as pipCompile } from 'shlex';
+import { RenovateConfig } from '../../config/types';
 import { TEMPORARY_ERROR } from '../../constants/error-messages';
 import { logger } from '../../logger';
 import { ExecOptions, exec } from '../../util/exec';
@@ -37,12 +38,37 @@ function getPipToolsConstraint(config: UpdateArtifactsConfig): string {
   return '';
 }
 
+export async function runPipCompile(
+  config: RenovateConfig,
+  args: string
+): Promise<null> {
+  const cmd = 'pip-compile';
+  const tagConstraint = getPythonConstraint(config);
+  const pipToolsConstraint = getPipToolsConstraint(config);
+  const execOptions: ExecOptions = {
+    cwdFile: args,
+    docker: {
+      image: 'python',
+      tagConstraint,
+      tagScheme: 'pep440',
+      preCommands: [
+        `pip install --user ${pipCompile(`pip-tools${pipToolsConstraint}`)}`,
+      ],
+    },
+  };
+  logger.debug({ cmd }, 'pip-compile command');
+  await exec(cmd, execOptions);
+}
+
 export async function updateArtifacts({
   packageFileName: inputFileName,
   newPackageFileContent: newInputContent,
   config,
 }: UpdateArtifact): Promise<UpdateArtifactsResult[] | null> {
-  const outputFileName = inputFileName.replace(/(\.in)?$/, '.txt');
+  logger.debug(config.fileMeta);
+  const outputFileName = config.fileMeta?.inFiles
+    ? inputFileName
+    : inputFileName.replace(/(\.in)?$/, '.txt');
   logger.debug(
     `pipCompile.updateArtifacts(${inputFileName}->${outputFileName})`
   );
@@ -56,22 +82,7 @@ export async function updateArtifacts({
     if (config.isLockFileMaintenance) {
       await deleteLocalFile(outputFileName);
     }
-    const cmd = 'pip-compile';
-    const tagConstraint = getPythonConstraint(config);
-    const pipToolsConstraint = getPipToolsConstraint(config);
-    const execOptions: ExecOptions = {
-      cwdFile: inputFileName,
-      docker: {
-        image: 'python',
-        tagConstraint,
-        tagScheme: 'pep440',
-        preCommands: [
-          `pip install --user ${pipCompile(`pip-tools${pipToolsConstraint}`)}`,
-        ],
-      },
-    };
-    logger.debug({ cmd }, 'pip-compile command');
-    await exec(cmd, execOptions);
+    runPipCompile(config, `-o ${outputFileName} ${config.fileMeta.inFiles}`);
     const status = await getRepoStatus();
     if (!status?.modified.includes(outputFileName)) {
       return null;

@@ -24,6 +24,7 @@ export interface ExtractConfig {
   skipInstalls?: boolean;
   updateInternalDeps?: boolean;
   deepExtract?: boolean;
+  fileMeta?: Record<string, string>;
 }
 
 export interface CustomExtractConfig extends ExtractConfig {
@@ -87,6 +88,7 @@ export interface PackageFile<T = Record<string, any>>
   yarnWorkspacesPackages?: string[] | string;
   matchStrings?: string[];
   matchStringsStrategy?: MatchStringsStrategy;
+  fileMeta?: Record<string, string>;
 }
 
 export interface Package<T> extends ManagerData<T> {

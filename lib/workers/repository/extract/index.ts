@@ -5,6 +5,7 @@ import { logger } from '../../../logger';
 import { getManagerList } from '../../../manager';
 import type { PackageFile } from '../../../manager/types';
 import { getFileList } from '../../../util/git';
+import { regEx } from '../../../util/regex';
 import { getMatchingFiles } from './file-match';
 import { getManagerPackageFiles } from './manager-files';
 
@@ -24,7 +25,33 @@ export async function extractAllDependencies(
   const tryConfig = (extractConfig: RenovateConfig): void => {
     const matchingFileList = getMatchingFiles(extractConfig, fileList);
     if (matchingFileList.length) {
-      extractList.push({ ...extractConfig, fileList: matchingFileList });
+      for (const patternGroup of extractConfig.transformationRegex) {
+        const groups = {};
+        for (const file of matchingFileList) {
+          // apply sed-like regex transformation
+          const pattern = regEx(patternGroup.find);
+          const replaced = file.replace(pattern, patternGroup.replace);
+          if (!(replaced in groups)) {
+            groups[replaced] = [];
+          }
+          groups[replaced].push(file);
+        }
+        logger.debug(`Groups:`);
+        logger.debug(groups);
+        for (const [outFile, inFiles] of Object.entries(groups)) {
+          extractList.push({
+            ...extractConfig,
+            fileList: [outFile],
+            fileMeta: { inFiles },
+          });
+          extractList.push({
+            ...extractConfig,
+            manager: 'pip_requirements',
+            fileList: inFiles,
+            fileMeta: { outFile },
+          });
+        }
+      }
     }
   };
 

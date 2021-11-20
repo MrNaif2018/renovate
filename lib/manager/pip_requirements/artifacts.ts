@@ -3,6 +3,7 @@ import { TEMPORARY_ERROR } from '../../constants/error-messages';
 import { logger } from '../../logger';
 import { ExecOptions, exec } from '../../util/exec';
 import { readLocalFile } from '../../util/fs';
+import { runPipCompile } from '../pip-compile/artifacts';
 import type { UpdateArtifact, UpdateArtifactsResult } from '../types';
 
 export async function updateArtifacts({
@@ -43,6 +44,7 @@ export async function updateArtifacts({
       },
     };
     await exec(cmd, execOptions);
+    runPipCompile(config, `-o ${config.fileMeta.outFile} ${packageFileName}`);
     const newContent = await readLocalFile(packageFileName, 'utf8');
     if (newContent === newPackageFileContent) {
       logger.debug(`${packageFileName} is unchanged`);

@@ -158,6 +158,7 @@ export interface RenovateConfig
     RenovateSharedConfig,
     UpdateConfig<PackageRule>,
     AssigneesAndReviewersConfig,
+    OutputGroupsConfig,
     Record<string, unknown> {
   depName?: string;
   baseBranches?: string[];
@@ -218,6 +219,14 @@ export interface AssigneesAndReviewersConfig {
   reviewersSampleSize?: number;
   additionalReviewers?: string[];
   filterUnavailableUsers?: boolean;
+}
+
+export interface TransformationRegex {
+  find?: string;
+  replace?: string;
+}
+export interface OutputGroupsConfig {
+  transformationRegex?: TransformationRegex[];
 }
 
 export type UpdateType =
